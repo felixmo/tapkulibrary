@@ -43,6 +43,9 @@
 #define INDICATOR_HEIGHT 43.0
 #define SCROLL_MARGINS 40
 
+#define YLABELS_MARGIN 30
+#define GOAL_OFFSET 50
+
 static int POINT_DISTANCE = 50;
 
 static float lowValue; 
@@ -265,7 +268,7 @@ static float highValue;
 	//CGContextSetRGBStrokeColor(context,249.0/255.0, 249.0/255.0, 249.0/255.0, 1.0);
 	CGContextSetRGBFillColor(context, 68.0/255.0, 152.0/255.0, 211.0/255.0, 1.0);
 	CGContextSetLineWidth(context, 2);
-	
+    
 	for(int i = 0; i < [data count] ; i++){
 		
 		
@@ -322,7 +325,7 @@ static float highValue;
 
 // GET TOUCH
 - (void) touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event{
-	NSLog(@"Touch");
+//	NSLog(@"Touch");
 	[[[self superview] superview] touchesEnded:touches withEvent:event];
 }
 
@@ -343,6 +346,9 @@ static float highValue;
 - (void) drawBackground:(CGContextRef)context;
 - (void) drawBottomLine:(CGContextRef)context;
 - (void) drawHorizontalLines:(CGContextRef)context;
+- (void)drawYAxisLabels:(CGContextRef)context;
+- (void)drawLeftLine:(CGContextRef)context;
+- (void)drawTopLine:(CGContextRef)context;
 
 - (float) valueToYCoordinate:(float)value;
 - (float) yCoordinateToValue:(float)y;
@@ -355,6 +361,76 @@ static float highValue;
 
 
 // PUBLIC
+
+- (void)drawYAxisLabels:(CGContextRef)context {
+    
+    // Create an array containing only the Y values
+    NSMutableArray *unsortedY = [[NSMutableArray alloc] init];
+    
+    for (int i = 0; i < [plotView.data count]; i++) {
+        [unsortedY addObject:[[plotView.data objectAtIndex:i] yValue]];
+    }
+    
+    // Sort descriptor sorts the Y values in descending order
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:nil ascending:YES];
+    
+    // Create an array from the sorted Y values
+    NSArray *sortedY = [unsortedY sortedArrayUsingDescriptors:[NSArray arrayWithObject:sortDescriptor]];
+    
+    [unsortedY release];
+    [sortDescriptor release];
+    
+    // Store values
+    float lastYCoord = BOTTOM_LINE;
+	float yCoord = 0;
+    float yValue = 0;
+    
+    // Line color
+    CGFloat clr[] = {0,0,0,0.3};
+    
+	for(int i=0;i<[sortedY count];i++){
+        
+        yValue =[[sortedY objectAtIndex:i] floatValue];
+        yCoord = [plotView valueToYCoordinate: yValue]+stageTopMargin;
+        
+        // Add "0"
+        if (i == 0) {
+            
+            [UIView drawLineInRect:CGRectMake(YLABELS_MARGIN-6, BOTTOM_LINE+.5, 6, 0) colors:clr];
+            
+            UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(0, BOTTOM_LINE-6, YLABELS_MARGIN-8, 15)];
+            lab.text = @"0";
+            [lab setFont:[UIFont boldSystemFontOfSize:10.0]];
+            [lab setTextColor:[UIColor grayColor]];
+            [lab setTextAlignment: UITextAlignmentRight];
+            [lab setBackgroundColor:[UIColor clearColor]];
+            [self addSubview:lab];
+            
+            [lab release];
+        }
+
+        // Only add a label if there is enough space between it and the last one
+        if ((lastYCoord - yCoord) >= 20) {
+
+            lastYCoord = yCoord;
+        
+            NSString *labText = [[NSString alloc] initWithFormat:@"%1.0f", yValue];
+            
+            UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(0, yCoord-7, YLABELS_MARGIN-8, 15)];
+            lab.text = labText;
+            [lab setFont:[UIFont boldSystemFontOfSize:10.0]];
+            [lab setTextColor:[UIColor grayColor]];
+            [lab setTextAlignment: UITextAlignmentRight];
+            [lab setBackgroundColor:[UIColor clearColor]];
+            [self addSubview:lab];
+            
+            [UIView drawLineInRect:CGRectMake(YLABELS_MARGIN-6, yCoord, 6, 0) colors:clr];
+            
+            [lab release];
+            [labText release];
+        }
+    }
+}
 
 - (id) initWithFrame:(CGRect)frame {
 	if(![super initWithFrame:frame]) return nil;
@@ -371,7 +447,7 @@ static float highValue;
 	titleLabel.frame = r;
 	
 	
-	scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, stageTopMargin, self.frame.size.width, frame.size.height - 30)];
+	scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(YLABELS_MARGIN, stageTopMargin, self.frame.size.width, frame.size.height - 30)];
 	scrollView.delegate = self;
 	scrollView.showsHorizontalScrollIndicator = YES;
 	scrollView.backgroundColor = [UIColor clearColor];
@@ -481,7 +557,7 @@ static float highValue;
 	
 	//int row = i;
 	
-	NSString *str = [d yLabel];
+	NSString *str = [[NSString alloc] initWithFormat:@"%1.1f", [[d yValue] floatValue]];
 	
 	BOOL  up = y - INDICATOR_HEIGHT - 10 < 10 ? NO : YES;
 	
@@ -499,7 +575,7 @@ static float highValue;
 													 sideUp:up];
 	[scrollView addSubview:indicator];
 	
-	
+	[str release];
 	
 	CABasicAnimation *a = [CABasicAnimation animationWithKeyPath:@"opacity"];
 	a.duration = 0.5;
@@ -554,6 +630,12 @@ static float highValue;
 
 
 #pragma mark DELEGATE & TOUCH FUNCTIONS
+- (void) scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    
+    if (!decelerate)
+        [self moveGoalLabel:YES];
+}
+
 - (void) scrollViewDidEndDecelerating:(UIScrollView *)scroll{
 	[self moveGoalLabel:YES];
 }
@@ -575,7 +657,7 @@ static float highValue;
 	UITouch *t = [touches anyObject];
 	CGPoint point = [t locationInView:plotView];
 	
-	NSLog(@"%f",point.x);
+//	NSLog(@"%f",point.x);
 	
 	int i = ((point.x - SCROLL_MARGINS) -(POINT_DISTANCE/2)) / POINT_DISTANCE;
 	
@@ -593,8 +675,19 @@ static float highValue;
 	CGContextFillRect(context, CGRectMake(0, 0, 480.0, BOTTOM_LINE));
 }
 - (void) drawBottomLine:(CGContextRef)context{
-	[UIView drawLineInRect:CGRectMake(0, BOTTOM_LINE+.5, 480, 0) red:0 green:0 blue:0 alpha:.4];
+	[UIView drawLineInRect:CGRectMake(YLABELS_MARGIN, BOTTOM_LINE+.5, 480-YLABELS_MARGIN, 0) red:0 green:0 blue:0 alpha:.4];
 }
+
+- (void)drawLeftLine:(CGContextRef)context {
+    
+    [UIView drawLineInRect:CGRectMake(YLABELS_MARGIN, stageTopMargin, 0, 320-stageTopMargin) red:0 green:0 blue:0 alpha:.4];
+}
+
+- (void)drawTopLine:(CGContextRef)context {
+    
+    [UIView drawLineInRect:CGRectMake(0, stageTopMargin, 480, 0) red:0 green:0 blue:0 alpha:.4];
+}
+
 - (void) drawHorizontalLines:(CGContextRef)context{
 	
 	// HORIZONTAL LINES
@@ -624,7 +717,11 @@ static float highValue;
     // Drawing code
 	CGContextRef context = UIGraphicsGetCurrentContext();
 	[self drawBackground:context];
+    [self drawYAxisLabels:context];
 	[self drawBottomLine:context];
+    [self drawLeftLine:context];
+    [self drawTopLine:context];
+//    [self drawYAxisLabels];
 	//[self drawHorizontalLines:context];
 	
 	
@@ -678,7 +775,7 @@ static float highValue;
 
 - (void) moveGoalLabel:(BOOL)animated{
 	CGRect r = goalLabel.frame;
-	r.origin.x = scrollView.contentOffset.x + 420;
+	r.origin.x = scrollView.contentOffset.x + 420 - YLABELS_MARGIN - GOAL_OFFSET;
 	if(animated){
 		[UIView beginAnimations:NULL context:nil];
 		[UIView setAnimationDuration:.2];

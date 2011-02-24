@@ -55,7 +55,7 @@
 	//[self.view addSubview:graph];
 	
 	close = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
-	close.frame = CGRectMake(-10, 0, 65, 45);
+	close.frame = CGRectMake(420, 0, 65, 45);
 	
 	
 	
