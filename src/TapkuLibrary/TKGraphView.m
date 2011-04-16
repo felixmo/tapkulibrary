@@ -392,6 +392,7 @@ static float highValue;
         
         yValue =[[sortedY objectAtIndex:i] floatValue];
         yCoord = [plotView valueToYCoordinate: yValue]+stageTopMargin;
+        NSString *labText = [[NSString alloc] initWithFormat:@"%1.0f", yValue];
         
         // Add "0"
         if (i == 0) {
@@ -399,7 +400,7 @@ static float highValue;
             [UIView drawLineInRect:CGRectMake(YLABELS_MARGIN-6, BOTTOM_LINE+.5, 6, 0) colors:clr];
             
             UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(0, BOTTOM_LINE-6, YLABELS_MARGIN-8, 15)];
-            lab.text = @"0";
+            lab.text = labText;
             [lab setFont:[UIFont boldSystemFontOfSize:10.0]];
             [lab setTextColor:[UIColor grayColor]];
             [lab setTextAlignment: UITextAlignmentRight];
@@ -413,8 +414,6 @@ static float highValue;
         if ((lastYCoord - yCoord) >= 20) {
 
             lastYCoord = yCoord;
-        
-            NSString *labText = [[NSString alloc] initWithFormat:@"%1.0f", yValue];
             
             UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(0, yCoord-7, YLABELS_MARGIN-8, 15)];
             lab.text = labText;
@@ -427,8 +426,9 @@ static float highValue;
             [UIView drawLineInRect:CGRectMake(YLABELS_MARGIN-6, yCoord, 6, 0) colors:clr];
             
             [lab release];
-            [labText release];
         }
+        
+        [labText release];
     }
 }
 
@@ -452,7 +452,7 @@ static float highValue;
 	scrollView.showsHorizontalScrollIndicator = YES;
 	scrollView.backgroundColor = [UIColor clearColor];
 	[self addSubview:scrollView];
-	
+    
 	border = [[UIImageView alloc] initWithImage:[UIImage imageNamedTK:@"TapkuLibrary.bundle/Images/graph/mask"]];
 	[self addSubview:border];
 	

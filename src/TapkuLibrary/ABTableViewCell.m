@@ -47,10 +47,10 @@
 
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
 {
-    if(self = [super initWithStyle:style reuseIdentifier:reuseIdentifier])
+    if(self == [super initWithStyle:style reuseIdentifier:reuseIdentifier])
 	{
 		contentView = [[ABTableViewCellView alloc] initWithFrame:CGRectZero];
-		contentView.opaque = YES;
+		contentView.opaque = NO;
 		[self addSubview:contentView];
 		[contentView release];
     }
@@ -59,10 +59,10 @@
 
 - (id)initWithFrame:(CGRect)frame reuseIdentifier:(NSString *)reuseIdentifier
 {
-    if(self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier])
+    if(self == [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier])
 	{
 		contentView = [[ABTableViewCellView alloc] initWithFrame:CGRectZero];
-		contentView.opaque = YES;
+		contentView.opaque = NO;
 		[self addSubview:contentView];
 		[contentView release];
     }
@@ -97,6 +97,26 @@
 - (void)drawContentView:(CGRect)r
 {
 	// subclasses should implement this
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    
+    [super setSelected:selected animated:animated];
+}
+
+- (void)setHighlighted:(BOOL)highlighted animated:(BOOL)animated {
+    
+    [super setHighlighted:highlighted animated:animated];
+}
+
+- (BOOL)isSelected {
+    
+    return [super isSelected];
+}
+
+- (BOOL)isHighlighted {
+    
+    return [super isHighlighted];
 }
 
 @end

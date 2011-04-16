@@ -38,11 +38,13 @@
 
 
 - (id)initWithFrame:(CGRect)frame reuseIdentifier:(NSString *)reuseIdentifier {
-    if (self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier]) {
+    if (self == [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier]) {
         // Initialization code
 		field = [[UILabel alloc] initWithFrame:CGRectZero];
 		[self addSubview:field];
 		field.font = [UIFont boldSystemFontOfSize:16.0];
+        field.clipsToBounds = YES;
+        field.adjustsFontSizeToFitWidth = YES;
     }
     return self;
 }
@@ -61,8 +63,6 @@
 	}
 	
 	field.frame = r;
-	
-	
 }
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
 	
@@ -84,6 +84,43 @@
 	}
 }
 
+- (BOOL)canBecomeFirstResponder {
+    
+    return YES;
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+
+    if (action == @selector(copy:))
+        return YES;
+    
+    if (action == @selector(append:))
+        return YES;
+    
+    return NO;
+}
+
+- (void)showMenu {
+    
+    [self becomeFirstResponder];
+    if ([[UIPasteboard generalPasteboard] string] != nil) {
+        UIMenuItem *append = [[UIMenuItem alloc] initWithTitle:@"Append" action:@selector(append:)];
+        [[UIMenuController sharedMenuController] setMenuItems:[NSArray arrayWithObjects:append, nil]];
+        [append release];
+    }
+    [[UIMenuController sharedMenuController] setTargetRect:CGRectZero inView:self];
+    [[UIMenuController sharedMenuController] setMenuVisible:YES animated:YES];
+}
+
+- (void)copy:(id)sender {
+    
+    [[UIPasteboard generalPasteboard] setString:field.text];
+}
+
+- (void)append:(id)sender {
+    
+    [[UIPasteboard generalPasteboard] setString:[[[UIPasteboard generalPasteboard] string] stringByAppendingFormat:@", %@", field.text]];
+}
 
 - (void)dealloc {
 	[field release];

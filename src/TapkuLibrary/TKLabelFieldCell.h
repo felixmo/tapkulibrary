@@ -36,5 +36,6 @@
 	UILabel *field;
 }
 @property (retain, nonatomic) UILabel *field;
+- (void)showMenu;
 @end
 

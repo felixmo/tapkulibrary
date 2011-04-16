@@ -37,5 +37,7 @@
 }
 
 - (void)drawContentView:(CGRect)r; // subclasses should implement
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated;
+- (void)setHighlighted:(BOOL)highlighted animated:(BOOL)animated;
 
 @end
